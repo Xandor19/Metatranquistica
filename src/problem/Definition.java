@@ -7,24 +7,37 @@ public class Definition {
      * Cantidad de destinos
      */
     private int amountDestinations;
+
     /**
      * Cantidad de destinos priorizados
      */
     private int amountPrioritized;
 
+    /**
+     * Velocidad a la que se realizara la ruta
+     */
+    private float routeSpeed;
+
+    /**
+     * Indica que destinos son priorizados (true en el indice correspondiente)
+     */
     private Boolean[] prioritized;
+
     /**
      * Costo de desplazarse de una posicion i a una posicion j
      */
     private float[][] transitionsCost;
+
     /**
      * Semilla para la generacion de numeros aleatorios
      */
     public static final long seed = 314;
+
     /**
      * Generador de numeros aleatorios
      */
     private final Random randomGenerator;
+
     /**
      * Instancia singleton de la clase
      */
@@ -37,6 +50,9 @@ public class Definition {
         randomGenerator = new Random(seed);
     }
 
+    /**
+     * Metodo para obtener la instancia singleton
+     */
     public static Definition getDefinition() {
         if (definition == null) {
             definition = new Definition();
@@ -47,10 +63,12 @@ public class Definition {
     /**
      * Generador de instancias aleatorias
      */
-    public void randomInstanceGeneration(int amountDestinations) {
+    public void randomInstanceGeneration(int amountDestinations, float routeSpeed) {
+        //Inicializacion de cantidades
+        this.setAmountDestinations(amountDestinations);
+        this.setAmountPrioritized(amountDestinations / 2);
+        this.setRouteSpeed(routeSpeed);
         //Inicializacion de colecciones
-        this.amountDestinations = amountDestinations;
-        this.amountPrioritized = amountDestinations / 2;
         this.transitionsCost = new float[amountDestinations][amountDestinations];
         this.prioritized = new Boolean[amountDestinations];
         //Lista auxiliar para generacion de destinos priorizados
@@ -65,10 +83,12 @@ public class Definition {
                 transitionsCost[i][j] = generated;
                 transitionsCost[j][i] = generated;
             }
+            //se agrega el maximo valor a la diagonal principal para no tomar en cuenta los lazos
             transitionsCost[i][i] = Float.MAX_VALUE;
         }
         //Genera la mitad de destinos como productos priorizados
         for (int i = 0; i < this.amountDestinations / 2; i++) {
+            //Itera agregando parejas true/false a la lista, obteniendo la misma cantidad de ambos
             prior.add(true);
             prior.add(false);
         }
@@ -83,15 +103,8 @@ public class Definition {
             prior.set(prior.indexOf(false), true);
             prior.set(0, false);
         }
+        //Almacena los indices de los productos priorizados
         this.prioritized = prior.toArray(prioritized);
-
-        System.out.print("[");
-
-        for (Boolean p :
-                prioritized) {
-            System.out.print(p + ", ");
-        }
-        System.out.println("]");
     }
 
     /**
@@ -126,6 +139,15 @@ public class Definition {
 
     public void setAmountPrioritized(int amountPrioritized) {
         this.amountPrioritized = amountPrioritized;
+    }
+
+    public float getRouteSpeed() {
+        return routeSpeed;
+    }
+
+    public void setRouteSpeed(float routeSpeed) {
+        if (routeSpeed > 0) this.routeSpeed = routeSpeed;
+        else throw new IllegalArgumentException("La velocidad debe ser mayor que 0");
     }
 
     public Boolean[] getPrioritized() {

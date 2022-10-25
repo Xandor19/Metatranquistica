@@ -10,15 +10,25 @@ import java.util.*;
 
 public class RoutingOperator extends Operator {
 
+    /**
+     * Codificacion del problema para validar los estados
+     */
     private RoutingCodification codif;
 
+    /**
+     * Constructor por defecto
+     */
     public RoutingOperator() {
         this.codif = new RoutingCodification();
     }
 
     /**
      * Define la estrategia para la construccion de soluciones iniciales del problema
-     * Genera una lista de soluciones iniciales para el problema.
+     * Se utiliza la heuristica del vecino mas cercano para la construccion de la solucion
+     * inicial.
+     * Genera una lista de soluciones iniciales para el problema con el tamanno de vecindad
+     * especificado.
+     * La vecindad se genera a partir de mutaciones al resultado del vecino mas cercano
      *
      * @param neighbourhoodSize Cantidad de soluciones a generar
      * @return Lista de soluciones
@@ -28,18 +38,18 @@ public class RoutingOperator extends Operator {
         //Vecindad de soluciones
         List<State> neighbourhood = new ArrayList<>();
 
-        //Crear una nueva instancia de State que representa la solucion inicial
+        //Crear la solucion inicial
         State initial = new State();
-        //Crear la lista que representa la codificacion de las soluciones
+        //Lista para la codificacion de la solucion inicial
         ArrayList<Object> initialCode = new ArrayList<>();
         //Primero se agrega el punto de partida de la ruta
         initialCode.add(0);
 
         //Inicializar los valores de acuerdo a la heuristica del vecino mas cercano
         for (int j = 1; j < Definition.getDefinition().getAmountDestinations(); j++) {
-            //Obtiene los costos de las transiciones a partir del destino actual
+            //Obtiene los costos de todas las transiciones a partir del destino actual
             float[] costsFrom = Definition.getDefinition().getTransitionsCost()[j].clone();
-            //Bandera para la insercion
+            //Bandera para indicar insercion
             boolean insert = false;
 
             //Iterar hasta lograr un destino valido
@@ -72,21 +82,20 @@ public class RoutingOperator extends Operator {
                 }
             } while (!insert);
         }
-        //Asignar los nuevos valores de las variables de decision a la solucion inicial
+        //Asignar la codificacion a la solucion inicial
         initial.setCode(initialCode);
         //Agregar la nueva solucion a la lista de soluciones vecinas
         neighbourhood.add(initial);
-        //Generar una vecindad de soluciones
+        //Generar una vecindad de soluciones alrededor de la solucion inicial
         neighbourhood.addAll(generatedNewState(initial, neighbourhoodSize - 1));
-
-        neighbourhood.forEach(x -> System.out.println(x.getCode().toString()));
         //Devolver la vecindad generada
         return neighbourhood;
     }
 
     /**
      * Define la estructura de vecindades del problema.
-     * Genera una lista de soluciones vecinas a la solución de referencia que se recibe por parametro.
+     * Genera una lista de soluciones vecinas a la solución recibida con el tamanno recibido.
+     * La generacion se realiza mediante la heuristica del intercambio simple aleatorio
      *
      * @param state             solucion de referencia a partir de la cual se obtendran nuevas soluciones vecinas a ella.
      * @param neighbourhoodSize Cantidad de soluciones vecinas a generar
@@ -94,32 +103,33 @@ public class RoutingOperator extends Operator {
      */
     @Override
     public List<State> generatedNewState(State state, Integer neighbourhoodSize) {
+        //Lista de vecindades
         List<State> neighbourhood = new ArrayList<>();
-        //Generador aleatorio. Usar nextInt() para entero aleatorio, nextDouble() para flotante aleatorio
+        //Obtener el generador aleatorio definido para el problema
         Random randomGenerator = Definition.getDefinition().getRandomGenerator();
 
         //Se generan tantas soluciones como las especificadas por el tamanno de la vecindad
         for (int i = 0; i < neighbourhoodSize; i++) {
-            //Crear una nueva instancia de State que representa una solucion vecina
+            //Instancia para la solucion vecina
             State neighbour;
-            //Crear una copia de las variables de decision de la solucion de referencia para la nueva solucion
+            //Instancia para la codificacion de la solucion vecina
             ArrayList<Object> neighbourCode;
 
+            //Se generan soluciones vecinas hasta encontrar una factible
             do {
-                //Generar soluciones vecinas hasta encontrar una factible
                 neighbour = new State();
                 neighbourCode = new ArrayList<>(state.getCode());
 
-                //Modificar los valores de las variables de decision de acuerdo a la heuristica definida
+                //Obtener las posiciones a intercambiar
                 int dest0 = randomGenerator.nextInt(Definition.getDefinition().getAmountDestinations());
                 int dest1;
 
                 do {
-                    //Comprobar que no se obtenga el mismo indice
+                    //Comprobar que no se obtenga el mismo indice para la segunda posicion
                     dest1 = randomGenerator.nextInt(Definition.getDefinition().getAmountDestinations());
                 } while (dest0 == dest1);
 
-                //Se obtienen los destinos que fueron visitados en la posicion de la ruta correspondiente
+                //Se obtienen los destinos que fueron visitados en las posiciones obtenidas de la ruta
                 int atPos0 = (int) neighbourCode.get(dest0);
                 int atPos1 = (int) neighbourCode.get(dest1);
 
@@ -139,7 +149,9 @@ public class RoutingOperator extends Operator {
     }
 
     /**
-     * Define la estrategia de cruzamiento para el algoritmo genetico.
+     * Realiza el cruzamiento de dos padres para un algoritmo genetico
+     * Obtiene un nuevo individuo a partir de la mezcla del recorrido de productos
+     * priorizados de un padre con el recorrido del resto de productos del otro
      *
      * @param father0 Solucion padre
      * @param father1 Solucion padre
@@ -147,10 +159,10 @@ public class RoutingOperator extends Operator {
      */
     @Override
     public List<State> generateNewStateByCrossover(State father0, State father1) {
-        //Generador de numeros aleatorios
-        Random randomGenerator = Definition.getDefinition().getRandomGenerator();
         //Nueva solucion que sera derivada de ambos padres
         State state = new State(new ArrayList<>());
+        //Obtener el generador aleatorio definido para el problema
+        Random randomGenerator = Definition.getDefinition().getRandomGenerator();
         //Codificacion de la solucion father0
         List<Object> codeF0 = father0.getCode();
         //Codificacion de la solucion father1
@@ -158,8 +170,8 @@ public class RoutingOperator extends Operator {
         //Determinar punto de division de los cromosomas
         int splitPoint;
 
-        //Evitar puntos muy extremos para dividir los cromosomas
         do {
+            //Evitar puntos muy extremos para dividir los cromosomas
             splitPoint = randomGenerator.nextInt(codeF0.size());
         }
         while (splitPoint == 0 || splitPoint == codeF0.size() - 1);
@@ -168,72 +180,28 @@ public class RoutingOperator extends Operator {
         state.getCode().addAll(codeF0.subList(0, splitPoint));
         //Agregar la segunda parte de la codificacion de father1 a la nueva solucion
         state.getCode().addAll(codeF1.subList(splitPoint, codeF1.size()));
-        //Otras soluciones pueden ser obtenidas intercambiando las partes de las soluciones que se seleccionan
-        //Hasta este punto existe la posibilidad de que la solucion obtenida no sea factible.
-        //Para solucionar este problema podemos recurrir a varias estrategias:
-        //*Rechazo de la solucion: En este caso simplemente devolvemos una de las soluciones padre
-        //*Reparacion: Se intenta transformar la solucion obtenida de forma que sea factible y se cumplan las restricciones
-        //*Penalizacion: Al evaluar la solucion en la funcion objetivo se puede incrementar el costo de la solucion cuando una variable de decision tome un valor no factible.
-        State finalSolution = feasibilityTreatment(state, father0, father1, FeasibilityTreatmentType.REJECT);
-        //BiCIAM solo utiliza la primera solucion de la lista asi que no tiene mucho sentido generar otras alternativas de soluciones
+        //Tratamiento de la solucion generada segun su factibilidad
+        State finalSolution = feasibilityTreatment(state, father0, father1);
+        //Obtiene la solucion
         return Collections.singletonList(finalSolution);
     }
 
-    private State feasibilityTreatment(State crossedSolution, State father0, State father1, FeasibilityTreatmentType treatmentType) {
-        Random randomGenerator = Definition.getDefinition().getRandomGenerator();
-        //Si la solucion obtenida no es factible
+    /**
+     * Tratamiento de la factibilidad de una solucion
+     * Las soluciones no factibles son rechazadas y se toma a uno de sus padres
+     * aleatoriamente
+     *
+     * @param crossedSolution solucion generada
+     * @param father0         primer padre de la solucion
+     * @param father1         segundo padre de la solucion
+     * @return Solucion seleccionada segun la factibilidad
+     */
+    private State feasibilityTreatment(State crossedSolution, State father0, State father1) {
+        //Evalua la factibilidad de la solucion
         if (!Strategy.getStrategy().getProblem().getCodification().validState(crossedSolution)) {
-            switch (treatmentType) {
-                //Si la estrategia es rechazar la solucion se devuelve uno de los padres con igual probabilidad para ambos
-                case REJECT: {
-                    return randomGenerator.nextBoolean() ? father0 : father1;
-                }
-                //Si la estrategia es penalizar la solucion se devuelve la misma y la no factibilidad se trata al evaluar la funcion objetivo
-                case PENALIZATION:
-                    return crossedSolution;
-                //Intentar reparar la solucion
-                default: {
-                    //Dada la estrategia de cruzamiento aplicada la pincipal forma de no factibilidad
-                    //es que una tarea se encuentre asignada a mas de un trabajador y en consecuencia
-                    //otras tareas no hayan sido asignadas
-                    ArrayList<Object> codeCS=crossedSolution.getCode();
-                    Queue<Integer> unassignedTasks=new ArrayDeque<>();
-                    Map<Integer,Integer> taskSeenCount=new HashMap<>();
-                    for (int i = 0; i < Definition.getDefinition().getAmountDestinations(); i++) {
-                        if(!codeCS.contains(i)){
-                            unassignedTasks.add(i);
-                        }
-                    }
-                    for (int i = 0; i < Definition.getDefinition().getAmountDestinations(); i++) {
-                        int task= (int) codeCS.get(i);
-                        if(!taskSeenCount.containsKey(task)){
-                            taskSeenCount.put(task,1);
-                        }else{
-                            int currentCount=taskSeenCount.get(task);
-                            taskSeenCount.put(task,currentCount+1);
-                        }
-                    }
-                    while (!unassignedTasks.isEmpty()){
-                        int unassigned= unassignedTasks.poll();
-                        for(int key:taskSeenCount.keySet()){
-                            int currentCount=taskSeenCount.get(key);
-                            if (currentCount>1){
-                                int firstOccurrenceOfDuplicated = codeCS.indexOf(key);
-                                codeCS.set(firstOccurrenceOfDuplicated,unassigned);
-                                currentCount--;
-                                taskSeenCount.put(key,currentCount);
-                                break;
-                            }
-                        }
-                    }
-                    return new State(codeCS);
-                }
-            }
+            //Si la solucion no es factible devuelve aleatoriamente a uno de sus padres
+            return Definition.getDefinition().getRandomGenerator().nextBoolean() ? father0 : father1;
         }
         return crossedSolution;
-    }
-
-    enum FeasibilityTreatmentType {
-        REJECT, REPAIR, PENALIZATION
     }
 }

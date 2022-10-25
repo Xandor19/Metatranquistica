@@ -389,7 +389,7 @@ public class Executer {
 
     public static void main(String[] arg) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         //Inicializa la instancia con valores aleatorios
-        Definition.getDefinition().randomInstanceGeneration(100);
+        Definition.getDefinition().randomInstanceGeneration(100, 30);
         Executer ex = new Executer();
         ex.setMaxIterations(1000);
         ex.setNeighbourhoodSize(10);

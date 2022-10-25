@@ -6,16 +6,16 @@ import problem.definition.State;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
 public class RoutingCodification extends Codification {
     /**
-     * Define si una solucion del problema cumple con las restricciones o no.
-     * En este caso, una solucion valida debe cumplir que:
+     * Define si una solucion del problema cumple con las restricciones definidas
+     * Una solucion valida debe cumplir que:
      * -Todos los destinos sean visitados
      * -Todos los destinos sean visitados solo una vez
      * -Los destinos con productos priorizados sean visitados antes que el resto
+     * -El origen sea el primer nodo del recorrido
      * @param state Solucion a validar
      * @return true si la solucion es valida, false en caso contrario
      */
@@ -37,6 +37,7 @@ public class RoutingCodification extends Codification {
                     //Comprueba que los destinos obtenidos sean priorizados
                     for (Object o : mustBePrior) {
                         if (!Definition.getDefinition().isPrioritized((int) o)) {
+                            //Se encontro un destino no priorizado antes que todos los priorizados
                             return false;
                         }
                     }
@@ -54,10 +55,7 @@ public class RoutingCodification extends Codification {
      */
     @Override
     public Object getVariableAleatoryValue(int variableIndex) {
-        //Generador de numeros aleatorios a utilizar
-        Random randomGenerator= Definition.getDefinition().getRandomGenerator();
-
-        return randomGenerator.nextInt(Definition.getDefinition().getAmountDestinations());
+        return Definition.getDefinition().getRandomGenerator().nextInt(Definition.getDefinition().getAmountDestinations());
     }
 
     /**
@@ -66,10 +64,7 @@ public class RoutingCodification extends Codification {
      */
     @Override
     public int getAleatoryKey() {
-        //Generador de numeros aleatorios a utilizar
-        Random randomGenerator= Definition.getDefinition().getRandomGenerator();
-
-        return randomGenerator.nextInt(Definition.getDefinition().getAmountDestinations());
+        return Definition.getDefinition().getRandomGenerator().nextInt(Definition.getDefinition().getAmountDestinations());
     }
 
     /**
@@ -78,7 +73,6 @@ public class RoutingCodification extends Codification {
      */
     @Override
     public int getVariableCount() {
-        //complete el codigo aqui
         return Definition.getDefinition().getAmountDestinations();
     }
 }
