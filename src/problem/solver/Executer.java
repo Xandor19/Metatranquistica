@@ -59,7 +59,7 @@ public class Executer {
         //Realizacion de los experimentos con la heuristica seleccionada
         ex.runExperiments("RS", 10, "");
         //Muestra la mejor solucion obtenida
-        System.out.println(Strategy.getStrategy().getBestState().getCode());
+        System.out.println("Mejor solucion:\n" + Strategy.getStrategy().getBestState().getCode());
     }
 
     /**
