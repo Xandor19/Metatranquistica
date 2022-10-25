@@ -27,25 +27,44 @@ import java.util.stream.Collectors;
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class Executer {
 
-    private int maxIterations = 1000;
-    private int neighbourhoodSize = 1;
+    /**
+     * Cantidad de iteraciones del experimento
+     */
+    private int maxIterations;
 
+    /**
+     * Cantidad de soluciones vecinas en una corrida
+     */
+    private int neighbourhoodSize;
+
+    /**
+     * Constructor por defecto
+     */
     public Executer() {
     }
 
+    /**
+     * Constructor con la configuracion del experimento
+     */
     public Executer(int maxIterations, int neighbourhoodSize) {
         this.maxIterations = maxIterations;
         this.neighbourhoodSize = neighbourhoodSize;
     }
 
-    public void setMaxIterations(int maxIterations) {
-        this.maxIterations = maxIterations;
+    public static void main(String[] arg) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+        //Inicializacion de una instancia aleatoria del problema
+        Definition.getDefinition().randomInstanceGeneration(100, 30);
+        //Preparacion de la ejecucion
+        Executer ex = new Executer(1000, 10);
+        //Realizacion de los experimentos con la heuristica seleccionada
+        ex.runExperiments("RS", 10, "");
+        //Muestra la mejor solucion obtenida
+        System.out.println(Strategy.getStrategy().getBestState().getCode());
     }
 
-    public void setNeighbourhoodSize(int neighbourhoodSize) {
-        this.neighbourhoodSize = neighbourhoodSize;
-    }
-
+    /**
+     * Establece la configuracion de este problema
+     */
     private Problem configureProblem() {
         //Problema de optimizacion a resolver
         Problem problem = new Problem();
@@ -70,7 +89,137 @@ public class Executer {
         return problem;
     }
 
+    /**
+     * Ejecuta la heuristica seleccionada y salva los resultados
+     */
+    public void runExperiments(String algorithm, int executions, String resultsPath) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+        if (algorithm == null || algorithm.isEmpty()) {
+            throw new RuntimeException("Especifique un algoritmo Ej: HC,TS,SA,EE,GA");
+        }
+        if (resultsPath == null || resultsPath.isEmpty()) {
+            resultsPath = "results" + File.separator + algorithm;
+            File file = new File(resultsPath);
+            if (!file.exists()) {
+                file.mkdirs();
+            }
+        }
+        List<ExecutionInformation> executionInformations = runAlgorithmExecutions(algorithm, executions);
+        //Save best solution evaluation to file
+        saveEvaluationByExecution(resultsPath, executionInformations);
+        //Save reference solution by iteration
+        saveEvaluationByIteration(resultsPath, executionInformations);
+        saveCandidateSolutionEvaluationByIteration(resultsPath, executionInformations);
+    }
 
+    /**
+     * Prepara la ejecucion de la heuristica seleccionada
+     */
+    private List<ExecutionInformation> runAlgorithmExecutions(String algorithm, int executions) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+        List<ExecutionInformation> executionsInformation = new ArrayList<>();
+        switch (algorithm) {
+            //Ejecucion de un Escalador de Colinas
+            case "HC": {
+                for (int i = 0; i < executions; i++) {
+                    executeHillClimbing();
+                    ExecutionInformation ei = new ExecutionInformation();
+                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
+                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
+                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
+                    ei.execution = i;
+                    executionsInformation.add(ei);
+                    //Strategy.destroyExecute();
+                }
+            }
+            break;
+            //Ejecucion de una Busqueda Tabu
+            case "TS": {
+                for (int i = 0; i < executions; i++) {
+                    executeTabuSearch();
+                    ExecutionInformation ei = new ExecutionInformation();
+                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
+                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
+                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
+                    ei.execution = i;
+                    executionsInformation.add(ei);
+                    //Strategy.destroyExecute();
+                }
+            }
+            break;
+            //Ejecucion de un Templado Simulado
+            case "SA": {
+                for (int i = 0; i < executions; i++) {
+                    executeSimulatedAnnealing();
+                    ExecutionInformation ei = new ExecutionInformation();
+                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
+                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
+                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
+                    ei.execution = i;
+                    executionsInformation.add(ei);
+                    //Strategy.destroyExecute();
+                }
+            }
+            break;
+            //Ejecucion de una Estrategia Evolutiva
+            case "EE": {
+                for (int i = 0; i < executions; i++) {
+                    executeEvolutionaryStrategy_SteadyStateReplace_TournamentSelection();
+                    ExecutionInformation ei = new ExecutionInformation();
+                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
+                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
+                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
+                    ei.execution = i;
+                    executionsInformation.add(ei);
+                    //Strategy.destroyExecute();
+                }
+            }
+            break;
+            //Ejecucion de un Algoritmo Genetico
+            case "GA": {
+                for (int i = 0; i < executions; i++) {
+                    executeGeneticAlgorithm_SteadyStateReplace_RouletteSelection();
+                    ExecutionInformation ei = new ExecutionInformation();
+                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
+                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
+                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
+                    ei.execution = i;
+                    executionsInformation.add(ei);
+                    //Strategy.destroyExecute();
+                }
+            }
+            break;
+            //Ejecucion del Escalador de Colinas con reinicio
+            case "HCR": {
+                for (int i = 0; i < executions; i++) {
+                    executeHillClimbingRestart();
+                    ExecutionInformation ei = new ExecutionInformation();
+                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
+                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
+                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
+                    ei.execution = i;
+                    executionsInformation.add(ei);
+                    //Strategy.destroyExecute();
+                }
+            }break;
+            //Por defecto se utiliza la Busqueda Aleatoria
+            default:{
+                for (int i = 0; i < executions; i++) {
+                    executeRandomSearch();
+                    ExecutionInformation ei = new ExecutionInformation();
+                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
+                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
+                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
+                    ei.execution = i;
+                    executionsInformation.add(ei);
+                    //Strategy.destroyExecute();
+                }
+            }
+        }
+        return executionsInformation;
+    }
+
+    /**
+     * Configuracion para un Escalador de Colinas
+     */
     public void executeHillClimbing() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
@@ -82,11 +231,14 @@ public class Executer {
         Strategy.getStrategy().validate = false;
         Strategy.getStrategy().saveListBestStates = true;
         Strategy.getStrategy().saveListStates = true;
-        //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada por GeneratorType
+        //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada
         Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.HillClimbing);
 
     }
 
+    /**
+     * Configuracion para un Escalador de Colinas con reinicio
+     */
     public void executeHillClimbingRestart() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
@@ -104,6 +256,9 @@ public class Executer {
         Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.HillClimbingRestart);
     }
 
+    /**
+     * Configuracion para una Busqueda Tabu
+     */
     public void executeTabuSearch() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
@@ -121,6 +276,9 @@ public class Executer {
         Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.TabuSearch);
     }
 
+    /**
+     * Configuracion para un Templado Simulado
+     */
     public void executeSimulatedAnnealing() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
@@ -139,6 +297,10 @@ public class Executer {
         //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada por GeneratorType
         Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.SimulatedAnnealing);
     }
+
+    /**
+     * Configuracion para una Estrategia Evolutiva
+     */
     public void executeEvolutionaryStrategy_SteadyStateReplace_TournamentSelection() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
@@ -166,6 +328,9 @@ public class Executer {
         Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.RandomSearch);
     }
 
+    /**
+     * Configuracion para un Algoritmo Genetico con seleccion por ruleta
+     */
     public void executeGeneticAlgorithm_SteadyStateReplace_RouletteSelection() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
@@ -195,6 +360,9 @@ public class Executer {
         Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.RandomSearch);
     }
 
+    /**
+     * Configuracion para una Busqueda Aleatoria
+     */
     public void executeRandomSearch() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
@@ -209,122 +377,10 @@ public class Executer {
         //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada por GeneratorType
         Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.RandomSearch);
     }
-    public void runExperiments(String algorithm, int executions, String resultsPath) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        if (algorithm == null || algorithm.isEmpty()) {
-            throw new RuntimeException("Especifique un algoritmo Ej: HC,TS,SA,EE,GA");
-        }
-        if (resultsPath == null || resultsPath.isEmpty()) {
-            resultsPath = "results" + File.separator + algorithm;
-            File file = new File(resultsPath);
-            if (!file.exists()) {
-                file.mkdirs();
-            }
-        }
-        List<ExecutionInformation> executionInformations = runAlgorithmExecutions(algorithm, executions);
-        //Save best solution evaluation to file
-        saveEvaluationByExecution(resultsPath, executionInformations);
-        //Save reference solution by iteration
-        saveEvaluationByIteration(resultsPath, executionInformations);
-        saveCandidateSolutionEvaluationByIteration(resultsPath, executionInformations);
-    }
 
-    private List<ExecutionInformation> runAlgorithmExecutions(String algorithm, int executions) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        List<ExecutionInformation> executionsInformation = new ArrayList<>();
-        switch (algorithm) {
-            case "HC": {
-                for (int i = 0; i < executions; i++) {
-                    executeHillClimbing();
-                    ExecutionInformation ei = new ExecutionInformation();
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
-                }
-            }
-            break;
-            case "TS": {
-                for (int i = 0; i < executions; i++) {
-                    executeTabuSearch();
-                    ExecutionInformation ei = new ExecutionInformation();
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
-                }
-            }
-            break;
-            case "SA": {
-                for (int i = 0; i < executions; i++) {
-                    executeSimulatedAnnealing();
-                    ExecutionInformation ei = new ExecutionInformation();
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
-                }
-            }
-            break;
-            case "EE": {
-                for (int i = 0; i < executions; i++) {
-                    executeEvolutionaryStrategy_SteadyStateReplace_TournamentSelection();
-                    ExecutionInformation ei = new ExecutionInformation();
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
-                }
-            }
-            break;
-            case "GA": {
-                for (int i = 0; i < executions; i++) {
-                    executeGeneticAlgorithm_SteadyStateReplace_RouletteSelection();
-                    ExecutionInformation ei = new ExecutionInformation();
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
-                }
-            }
-            break;
-            case "HCR": {
-                for (int i = 0; i < executions; i++) {
-                    executeHillClimbingRestart();
-                    ExecutionInformation ei = new ExecutionInformation();
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
-                }
-            }break;
-            //Ejecucion de busqueda aleatoria
-            default:{
-                for (int i = 0; i < executions; i++) {
-                    executeRandomSearch();
-                    ExecutionInformation ei = new ExecutionInformation();
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
-                }
-            }
-        }
-        return executionsInformation;
-    }
-
+    /**
+     * Salva de los resultados de una iteracion
+     */
     private void saveEvaluationByIteration(String resultsPath, List<ExecutionInformation> executionInformations) {
         String outputPath = resultsPath + File.separator + "Detailed_execution_info";
         for (ExecutionInformation ei : executionInformations) {
@@ -346,6 +402,9 @@ public class Executer {
         System.out.println("Evaluations by iterations saved at: " + outputPath);
     }
 
+    /**
+     * Salva de la solucion candidata de una iteracion
+     */
     private void saveCandidateSolutionEvaluationByIteration(String resultsPath, List<ExecutionInformation> executionInformations) {
         String outputPath = resultsPath + File.separator + "Detailed_execution_info";
         for (ExecutionInformation ei : executionInformations) {
@@ -367,6 +426,9 @@ public class Executer {
         System.out.println("Evaluations by iterations saved at: " + outputPath);
     }
 
+    /**
+     * Salva de la evaluacion final de una ejecucion
+     */
     private void saveEvaluationByExecution(String resultsPath, List<ExecutionInformation> executionInformations) {
         StringBuilder data = new StringBuilder("Ejecucion,Evaluacion\n");
         double average = 0;
@@ -387,24 +449,27 @@ public class Executer {
         }
     }
 
-    public static void main(String[] arg) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        //Inicializa la instancia con valores aleatorios
-        Definition.getDefinition().randomInstanceGeneration(100, 30);
-        Executer ex = new Executer();
-        ex.setMaxIterations(1000);
-        ex.setNeighbourhoodSize(10);
-        ex.runExperiments("RS", 10, "");
-        //ex.runExperiments("GA", 10, "");
-        RoutingCodification cod = new RoutingCodification();
-        System.out.println(Strategy.getStrategy().getBestState().getCode());
-        System.out.println(cod.validState(Strategy.getStrategy().getBestState()));
+    /**
+     * Gets y sets
+     */
+
+    public void setMaxIterations(int maxIterations) {
+        this.maxIterations = maxIterations;
     }
 
+    public void setNeighbourhoodSize(int neighbourhoodSize) {
+        this.neighbourhoodSize = neighbourhoodSize;
+    }
+
+    /**
+     * Clase interna para representar las soluciones existentes en un momento dado
+     */
     static class ExecutionInformation {
         List<State> referenceSolutionByIteration;
         List<State> candidateSolutionByIteration;
         State bestSolutionFound;
         int execution;
+
         public double bestSolutionEvaluation() {
             return bestSolutionFound.getEvaluation().get(0);
         }
