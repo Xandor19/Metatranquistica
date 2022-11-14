@@ -2,7 +2,6 @@ package problem.operator;
 
 import metaheurictics.strategy.Strategy;
 import problem.Definition;
-import problem.codification.RoutingCodification;
 import problem.definition.Operator;
 import problem.definition.State;
 
@@ -11,15 +10,9 @@ import java.util.*;
 public class RoutingOperator extends Operator {
 
     /**
-     * Codificacion del problema para validar los estados
-     */
-    private RoutingCodification codif;
-
-    /**
      * Constructor por defecto
      */
     public RoutingOperator() {
-        this.codif = new RoutingCodification();
     }
 
     /**
@@ -107,6 +100,8 @@ public class RoutingOperator extends Operator {
         List<State> neighbourhood = new ArrayList<>();
         //Obtener el generador aleatorio definido para el problema
         Random randomGenerator = Definition.getDefinition().getRandomGenerator();
+        //Obtener la cantidad de productos priorizados
+        int amPrioritized = Definition.getDefinition().getAmountPrioritized();
 
         //Se generan tantas soluciones como las especificadas por el tamanno de la vecindad
         for (int i = 0; i < neighbourhoodSize; i++) {
@@ -114,33 +109,46 @@ public class RoutingOperator extends Operator {
             State neighbour;
             //Instancia para la codificacion de la solucion vecina
             ArrayList<Object> neighbourCode;
+            //Bandera que indica un intercambio valido
+            boolean correctExchange = false;
 
-            //Se generan soluciones vecinas hasta encontrar una factible
+            neighbour = new State();
+            neighbourCode = new ArrayList<>(state.getCode());
+
+            //Obtener las posiciones a intercambiar
+            int dest0;
+            int dest1;
+
             do {
-                neighbour = new State();
-                neighbourCode = new ArrayList<>(state.getCode());
+                //Comprobar que no se seleccione el origen para intercambiar
+                dest0 = randomGenerator.nextInt(Definition.getDefinition().getAmountDestinations());
+            } while (dest0 == 0);
 
-                //Obtener las posiciones a intercambiar
-                int dest0 = randomGenerator.nextInt(Definition.getDefinition().getAmountDestinations());
-                int dest1;
+            do {
+                dest1 = randomGenerator.nextInt(Definition.getDefinition().getAmountDestinations());
 
-                do {
-                    //Comprobar que no se obtenga el mismo indice para la segunda posicion
-                    dest1 = randomGenerator.nextInt(Definition.getDefinition().getAmountDestinations());
-                } while (dest0 == dest1);
+                //Comprobar que no se obtenga el mismo indice para la segunda posicion
+                if (dest1 != 0 && dest1 != dest0) {
+                    //Comprobar que se intercambien solo productos priorizados con priorizados y no
+                    //priorizados con no priorizados
+                    if (dest0 >= amPrioritized && dest1 >= amPrioritized ||
+                        dest0 < amPrioritized && dest1 < amPrioritized) {
+                        correctExchange = true;
+                    }
+                }
+            } while (!correctExchange);
 
-                //Se obtienen los destinos que fueron visitados en las posiciones obtenidas de la ruta
-                int atPos0 = (int) neighbourCode.get(dest0);
-                int atPos1 = (int) neighbourCode.get(dest1);
+            //Se obtienen los destinos que fueron visitados en las posiciones obtenidas de la ruta
+            int atPos0 = (int) neighbourCode.get(dest0);
+            int atPos1 = (int) neighbourCode.get(dest1);
 
-                //Intercambio de las posiciones de los destinos en el recorrido
-                neighbourCode.set(dest1, atPos0);
-                neighbourCode.set(dest0, atPos1);
+            //Intercambio de las posiciones de los destinos en el recorrido
+            neighbourCode.set(dest1, atPos0);
+            neighbourCode.set(dest0, atPos1);
 
-                //Asignar los nuevos valores de las variables de decision a la solucion vecina
-                neighbour.setCode(neighbourCode);
+            //Asignar los nuevos valores de las variables de decision a la solucion vecina
+            neighbour.setCode(neighbourCode);
 
-            } while (!codif.validState(neighbour));
             //Agregar la nueva solucion a la lista de soluciones vecinas
             neighbourhood.add(neighbour);
         }
@@ -171,7 +179,7 @@ public class RoutingOperator extends Operator {
         int splitPoint;
 
         do {
-            //Evitar puntos muy extremos para dividir los cromosomas
+            //Evitar puntos muy extremos para dividir los estados
             splitPoint = randomGenerator.nextInt(codeF0.size());
         }
         while (splitPoint == 0 || splitPoint == codeF0.size() - 1);
