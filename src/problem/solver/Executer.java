@@ -14,6 +14,7 @@ import problem.codification.RoutingCodification;
 import problem.definition.*;
 import problem.extension.TypeSolutionMethod;
 import problem.objective.function.RoutingObjectiveFunction;
+import problem.operator.OptOperator;
 import problem.operator.RoutingOperator;
 
 import java.io.File;
@@ -53,11 +54,18 @@ public class Executer {
 
     public static void main(String[] arg) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         //Inicializacion de una instancia aleatoria del problema
-        Definition.getDefinition().randomInstanceGeneration(100, 30);
+        Definition.getDefinition().randomInstanceGeneration(10, 30);
+
+        for (float[] row : Definition.getDefinition().getTransitionsCost()) {
+            for (float el: row) {
+                System.out.print(" " + el + " ");
+            }
+            System.out.println();
+        }
         //Preparacion de la ejecucion
         Executer ex = new Executer(1000, 10);
         //Realizacion de los experimentos con la heuristica seleccionada
-        ex.runExperiments("RS", 10, "");
+        ex.runExperiments("RS", "RE", 10, "");
         //Muestra la mejor solucion obtenida
         System.out.println("Mejor solucion:\n" + Strategy.getStrategy().getBestState().getCode());
     }
@@ -65,7 +73,7 @@ public class Executer {
     /**
      * Establece la configuracion de este problema
      */
-    private Problem configureProblem() {
+    private Problem configureProblem(String operatorType) {
         //Problema de optimizacion a resolver
         Problem problem = new Problem();
         //Funcion objetivo del problema
@@ -77,7 +85,15 @@ public class Executer {
         //Se define la funcion objetivo a optimizar para el problema
         problem.setFunction(objectives);
         //Estrategia para la construccion de soluciones y la estructura de vecindades
-        Operator operator = new RoutingOperator();
+        Operator operator;
+
+        switch (operatorType) {
+            case "02": operator = new OptOperator();
+            break;
+
+            default: operator = new RoutingOperator();
+        }
+
         problem.setOperator(operator);
         //Validacion de soluciones y generacion de valores aleatorios para las variables
         Codification codification = new RoutingCodification();
@@ -92,7 +108,7 @@ public class Executer {
     /**
      * Ejecuta la heuristica seleccionada y salva los resultados
      */
-    public void runExperiments(String algorithm, int executions, String resultsPath) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    public void runExperiments(String algorithm, String operator, int executions, String resultsPath) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         if (algorithm == null || algorithm.isEmpty()) {
             throw new RuntimeException("Especifique un algoritmo Ej: HC,TS,SA,EE,GA");
         }
@@ -103,7 +119,7 @@ public class Executer {
                 file.mkdirs();
             }
         }
-        List<ExecutionInformation> executionInformations = runAlgorithmExecutions(algorithm, executions);
+        List<ExecutionInformation> executionInformations = runAlgorithmExecutions(algorithm, operator, executions);
         //Save best solution evaluation to file
         saveEvaluationByExecution(resultsPath, executionInformations);
         //Save reference solution by iteration
@@ -114,13 +130,13 @@ public class Executer {
     /**
      * Prepara la ejecucion de la heuristica seleccionada
      */
-    private List<ExecutionInformation> runAlgorithmExecutions(String algorithm, int executions) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    private List<ExecutionInformation> runAlgorithmExecutions(String algorithm, String operator, int executions) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         List<ExecutionInformation> executionsInformation = new ArrayList<>();
         switch (algorithm) {
             //Ejecucion de un Escalador de Colinas
             case "HC": {
                 for (int i = 0; i < executions; i++) {
-                    executeHillClimbing();
+                    executeHillClimbing(operator);
                     ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
@@ -134,7 +150,7 @@ public class Executer {
             //Ejecucion de una Busqueda Tabu
             case "TS": {
                 for (int i = 0; i < executions; i++) {
-                    executeTabuSearch();
+                    executeTabuSearch(operator);
                     ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
@@ -148,7 +164,7 @@ public class Executer {
             //Ejecucion de un Templado Simulado
             case "SA": {
                 for (int i = 0; i < executions; i++) {
-                    executeSimulatedAnnealing();
+                    executeSimulatedAnnealing(operator);
                     ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
@@ -162,7 +178,7 @@ public class Executer {
             //Ejecucion de una Estrategia Evolutiva
             case "EE": {
                 for (int i = 0; i < executions; i++) {
-                    executeEvolutionaryStrategy_SteadyStateReplace_TournamentSelection();
+                    executeEvolutionaryStrategy_SteadyStateReplace_TournamentSelection(operator);
                     ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
@@ -176,7 +192,7 @@ public class Executer {
             //Ejecucion de un Algoritmo Genetico
             case "GA": {
                 for (int i = 0; i < executions; i++) {
-                    executeGeneticAlgorithm_SteadyStateReplace_RouletteSelection();
+                    executeGeneticAlgorithm_SteadyStateReplace_RouletteSelection(operator);
                     ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
@@ -190,7 +206,7 @@ public class Executer {
             //Ejecucion del Escalador de Colinas con reinicio
             case "HCR": {
                 for (int i = 0; i < executions; i++) {
-                    executeHillClimbingRestart();
+                    executeHillClimbingRestart(operator);
                     ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
@@ -203,7 +219,7 @@ public class Executer {
             //Por defecto se utiliza la Busqueda Aleatoria
             default:{
                 for (int i = 0; i < executions; i++) {
-                    executeRandomSearch();
+                    executeRandomSearch(operator);
                     ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
@@ -220,11 +236,11 @@ public class Executer {
     /**
      * Configuracion para un Escalador de Colinas
      */
-    public void executeHillClimbing() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    public void executeHillClimbing(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
         //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem();
+        Problem problem = configureProblem(operator);
         //Se define el problema de optimizacion a resolver
         Strategy.getStrategy().setProblem(problem);
         //Opcion para validar las soluciones
@@ -239,11 +255,11 @@ public class Executer {
     /**
      * Configuracion para un Escalador de Colinas con reinicio
      */
-    public void executeHillClimbingRestart() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    public void executeHillClimbingRestart(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
         //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem();
+        Problem problem = configureProblem(operator);
         //Se define el problema de optimizacion a resolver
         Strategy.getStrategy().setProblem(problem);
         //Opcion para validar las soluciones
@@ -259,11 +275,11 @@ public class Executer {
     /**
      * Configuracion para una Busqueda Tabu
      */
-    public void executeTabuSearch() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    public void executeTabuSearch(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
         //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem();
+        Problem problem = configureProblem(operator);
         //Se define el problema de optimizacion a resolver
         Strategy.getStrategy().setProblem(problem);
         //Opcion para validar las soluciones
@@ -279,11 +295,11 @@ public class Executer {
     /**
      * Configuracion para un Templado Simulado
      */
-    public void executeSimulatedAnnealing() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    public void executeSimulatedAnnealing(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
         //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem();
+        Problem problem = configureProblem(operator);
         //Se define el problema de optimizacion a resolver
         Strategy.getStrategy().setProblem(problem);
         //Opcion para validar las soluciones
@@ -301,11 +317,11 @@ public class Executer {
     /**
      * Configuracion para una Estrategia Evolutiva
      */
-    public void executeEvolutionaryStrategy_SteadyStateReplace_TournamentSelection() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    public void executeEvolutionaryStrategy_SteadyStateReplace_TournamentSelection(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
         //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem();
+        Problem problem = configureProblem(operator);
         //Se define el problema de optimizacion a resolver
         Strategy.getStrategy().setProblem(problem);
         //Opcion para validar las soluciones
@@ -331,11 +347,11 @@ public class Executer {
     /**
      * Configuracion para un Algoritmo Genetico con seleccion por ruleta
      */
-    public void executeGeneticAlgorithm_SteadyStateReplace_RouletteSelection() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    public void executeGeneticAlgorithm_SteadyStateReplace_RouletteSelection(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
         //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem();
+        Problem problem = configureProblem(operator);
         //Se define el problema de optimizacion a resolver
         Strategy.getStrategy().setProblem(problem);
         //Opcion para validar las soluciones
@@ -363,11 +379,11 @@ public class Executer {
     /**
      * Configuracion para una Busqueda Aleatoria
      */
-    public void executeRandomSearch() throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    public void executeRandomSearch(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         Strategy.getStrategy().setStopexecute(new StopExecute());
         Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
         //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem();
+        Problem problem = configureProblem(operator);
         //Se define el problema de optimizacion a resolver
         Strategy.getStrategy().setProblem(problem);
         //Opcion para validar las soluciones
