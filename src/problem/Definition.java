@@ -31,12 +31,12 @@ public class Definition {
     /**
      * Semilla para la generacion de numeros aleatorios
      */
-    public static final long seed = 314;
+    private long seed;
 
     /**
      * Generador de numeros aleatorios
      */
-    private final Random randomGenerator;
+    private Random randomGenerator;
 
     /**
      * Instancia singleton de la clase
@@ -47,7 +47,7 @@ public class Definition {
      * Constructor por defecto privado
      */
     private Definition() {
-        randomGenerator = new Random(seed);
+
     }
 
     /**
@@ -63,7 +63,9 @@ public class Definition {
     /**
      * Generador de instancias aleatorias
      */
-    public void randomInstanceGeneration(int amountDestinations, float routeSpeed) {
+    public void randomInstanceGeneration(int seed, int amountDestinations, float routeSpeed) {
+        this.seed = seed;
+        this.randomGenerator = new Random(seed);
         //Inicializacion de cantidades
         this.setAmountDestinations(amountDestinations);
         this.setAmountPrioritized(amountDestinations / 2);

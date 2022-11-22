@@ -42,6 +42,7 @@ public class Executer {
      * Constructor por defecto
      */
     public Executer() {
+        this(1000, 1);
     }
 
     /**
@@ -54,20 +55,12 @@ public class Executer {
 
     public static void main(String[] arg) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         //Inicializacion de una instancia aleatoria del problema
-        Definition.getDefinition().randomInstanceGeneration(10, 30);
+        Definition.getDefinition().randomInstanceGeneration(1000, 200, 30);
 
-        for (float[] row : Definition.getDefinition().getTransitionsCost()) {
-            for (float el: row) {
-                System.out.print(" " + el + " ");
-            }
-            System.out.println();
-        }
         //Preparacion de la ejecucion
         Executer ex = new Executer(1000, 10);
         //Realizacion de los experimentos con la heuristica seleccionada
-        ex.runExperiments("RS", "RE", 10, "");
-        //Muestra la mejor solucion obtenida
-        System.out.println("Mejor solucion:\n" + Strategy.getStrategy().getBestState().getCode());
+        ex.runExperiments("HC", "O2", 10, "");
     }
 
     /**
@@ -92,6 +85,7 @@ public class Executer {
             break;
 
             default: operator = new RoutingOperator();
+            break;
         }
 
         problem.setOperator(operator);
@@ -143,7 +137,7 @@ public class Executer {
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
                     ei.execution = i;
                     executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
+                    Strategy.destroyExecute();
                 }
             }
             break;
@@ -157,7 +151,7 @@ public class Executer {
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
                     ei.execution = i;
                     executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
+                    Strategy.destroyExecute();
                 }
             }
             break;
@@ -171,7 +165,7 @@ public class Executer {
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
                     ei.execution = i;
                     executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
+                    Strategy.destroyExecute();
                 }
             }
             break;
@@ -185,7 +179,7 @@ public class Executer {
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
                     ei.execution = i;
                     executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
+                    Strategy.destroyExecute();
                 }
             }
             break;
@@ -199,7 +193,7 @@ public class Executer {
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
                     ei.execution = i;
                     executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
+                    Strategy.destroyExecute();
                 }
             }
             break;
@@ -213,7 +207,7 @@ public class Executer {
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
                     ei.execution = i;
                     executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
+                    Strategy.destroyExecute();
                 }
             }break;
             //Por defecto se utiliza la Busqueda Aleatoria
@@ -226,7 +220,7 @@ public class Executer {
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
                     ei.execution = i;
                     executionsInformation.add(ei);
-                    //Strategy.destroyExecute();
+                    Strategy.destroyExecute();
                 }
             }
         }
