@@ -60,7 +60,7 @@ public class Executer {
         //Preparacion de la ejecucion
         Executer ex = new Executer(1000, 10);
         //Realizacion de los experimentos con la heuristica seleccionada
-        ex.runExperiments("HC", "O2", 10, "");
+        ex.runExperiments("GA", "O2", 10, "");
     }
 
     /**
@@ -335,7 +335,7 @@ public class Executer {
         //Cantidad de individuos en cada grupo del torneo
         EvolutionStrategies.truncation = 5;
         //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada por GeneratorType
-        Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.RandomSearch);
+        Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.EvolutionStrategies);
     }
 
     /**
@@ -348,6 +348,7 @@ public class Executer {
         Problem problem = configureProblem(operator);
         //Se define el problema de optimizacion a resolver
         Strategy.getStrategy().setProblem(problem);
+        Strategy.getStrategy().initialize();
         //Opcion para validar las soluciones
         Strategy.getStrategy().validate = false;
         Strategy.getStrategy().saveListBestStates = true;
@@ -361,13 +362,13 @@ public class Executer {
         //Se define como estrategia de reemplazo Estado Estable (va a tomar soluciones de la poblacion de referencia y la nueva generada en cada iteracion)
         GeneticAlgorithm.replaceType = ReplaceType.SteadyStateReplace;
         //Se define como estrategia de seleccion Ruleta de probabilidades a partir del fitness de cada individuo
-        GeneticAlgorithm.selectionType = SelectionType.RouletteSelection;
+        GeneticAlgorithm.selectionType = SelectionType.TournamentSelection;
         //Se especifica a la metaheuristica que utilice como operador de cruzamiento el definido en la interfaz Operator
         GeneticAlgorithm.crossoverType = CrossoverType.GenericCrossover;
         //Se define que en cada iteracion hay una probabilidad del 50% de realizar un cruzamiento
         GeneticAlgorithm.PC = 0.8;
         //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada por GeneratorType
-        Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.RandomSearch);
+        Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.GeneticAlgorithm);
     }
 
     /**
