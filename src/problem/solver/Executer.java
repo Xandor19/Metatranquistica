@@ -14,7 +14,7 @@ import problem.codification.RoutingCodification;
 import problem.definition.*;
 import problem.extension.TypeSolutionMethod;
 import problem.objective.function.RoutingObjectiveFunction;
-import problem.operator.OptOperator;
+import problem.operator.InversionOperator;
 import problem.operator.RoutingOperator;
 
 import java.io.File;
@@ -81,7 +81,7 @@ public class Executer {
         Operator operator;
 
         switch (operatorType) {
-            case "02": operator = new OptOperator();
+            case "02": operator = new InversionOperator();
             break;
 
             default: operator = new RoutingOperator();

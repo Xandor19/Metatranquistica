@@ -8,11 +8,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class OptOperator extends RoutingOperator {
+public class InversionOperator extends RoutingOperator {
     /**
      * Define la estructura de vecindades del problema.
      * Genera una lista de soluciones vecinas a la solución recibida con el tamanno recibido.
-     * La generacion se realiza mediante la heuristica Opt-2
+     * La generacion se realiza mediante la heuristica de inversion de subcadena
      *
      * @param state             solucion de referencia a partir de la cual se obtendran nuevas soluciones vecinas a ella.
      * @param neighbourhoodSize Cantidad de soluciones vecinas a generar
