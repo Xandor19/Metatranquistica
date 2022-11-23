@@ -1,6 +1,5 @@
-package problem.objective.function;
+package problem.objectiveFunction;
 
-import metaheurictics.strategy.Strategy;
 import problem.Definition;
 import problem.definition.ObjetiveFunction;
 import problem.definition.State;

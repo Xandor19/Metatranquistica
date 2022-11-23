@@ -13,7 +13,7 @@ import problem.Definition;
 import problem.codification.RoutingCodification;
 import problem.definition.*;
 import problem.extension.TypeSolutionMethod;
-import problem.objective.function.RoutingObjectiveFunction;
+import problem.objectiveFunction.RoutingObjectiveFunction;
 import problem.operator.InversionOperator;
 import problem.operator.RoutingOperator;
 
@@ -55,7 +55,7 @@ public class Executer {
 
     public static void main(String[] arg) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         //Inicializacion de una instancia aleatoria del problema
-        Definition.getDefinition().randomInstanceGeneration(1000, 200, 30);
+        Definition.getDefinition().randomInstanceGeneration(10, 50, 30);
 
         //Preparacion de la ejecucion
         Executer ex = new Executer(1000, 10);
@@ -81,7 +81,7 @@ public class Executer {
         Operator operator;
 
         switch (operatorType) {
-            case "02": operator = new InversionOperator();
+            case "O2": operator = new InversionOperator();
             break;
 
             default: operator = new RoutingOperator();
@@ -126,12 +126,12 @@ public class Executer {
      */
     private List<ExecutionInformation> runAlgorithmExecutions(String algorithm, String operator, int executions) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         List<ExecutionInformation> executionsInformation = new ArrayList<>();
+        ExecutionInformation ei = new ExecutionInformation();
         switch (algorithm) {
             //Ejecucion de un Escalador de Colinas
             case "HC": {
                 for (int i = 0; i < executions; i++) {
                     executeHillClimbing(operator);
-                    ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
@@ -145,7 +145,6 @@ public class Executer {
             case "TS": {
                 for (int i = 0; i < executions; i++) {
                     executeTabuSearch(operator);
-                    ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
@@ -159,7 +158,6 @@ public class Executer {
             case "SA": {
                 for (int i = 0; i < executions; i++) {
                     executeSimulatedAnnealing(operator);
-                    ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
@@ -173,7 +171,6 @@ public class Executer {
             case "EE": {
                 for (int i = 0; i < executions; i++) {
                     executeEvolutionaryStrategy_SteadyStateReplace_TournamentSelection(operator);
-                    ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
@@ -187,7 +184,6 @@ public class Executer {
             case "GA": {
                 for (int i = 0; i < executions; i++) {
                     executeGeneticAlgorithm_SteadyStateReplace_RouletteSelection(operator);
-                    ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
@@ -201,7 +197,6 @@ public class Executer {
             case "HCR": {
                 for (int i = 0; i < executions; i++) {
                     executeHillClimbingRestart(operator);
-                    ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
@@ -214,7 +209,6 @@ public class Executer {
             default:{
                 for (int i = 0; i < executions; i++) {
                     executeRandomSearch(operator);
-                    ExecutionInformation ei = new ExecutionInformation();
                     ei.bestSolutionFound = Strategy.getStrategy().getBestState();
                     ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
                     ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
@@ -485,5 +479,4 @@ public class Executer {
             return bestSolutionFound.getEvaluation().get(0);
         }
     }
-
 }
