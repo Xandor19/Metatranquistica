@@ -5,10 +5,11 @@ import evolutionary_algorithms.complement.MutationType;
 import evolutionary_algorithms.complement.ReplaceType;
 import evolutionary_algorithms.complement.SelectionType;
 import local_search.complement.StopExecute;
-import local_search.complement.TabuSolutions;
 import local_search.complement.UpdateParameter;
 import metaheurictics.strategy.Strategy;
-import metaheuristics.generators.*;
+import metaheuristics.generators.GeneratorType;
+import metaheuristics.generators.GeneticAlgorithm;
+import metaheuristics.generators.HillClimbingRestart;
 import problem.Definition;
 import problem.codification.RoutingCodification;
 import problem.definition.*;
@@ -39,13 +40,6 @@ public class Executer {
     private int neighbourhoodSize;
 
     /**
-     * Constructor por defecto
-     */
-    public Executer() {
-        this(1000, 1);
-    }
-
-    /**
      * Constructor con la configuracion del experimento
      */
     public Executer(int maxIterations, int neighbourhoodSize) {
@@ -55,12 +49,12 @@ public class Executer {
 
     public static void main(String[] arg) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         //Inicializacion de una instancia aleatoria del problema
-        Definition.getDefinition().randomInstanceGeneration(10, 50, 30);
+        Definition.getDefinition().randomInstanceGeneration(1000, 500, 30);
 
         //Preparacion de la ejecucion
         Executer ex = new Executer(1000, 10);
         //Realizacion de los experimentos con la heuristica seleccionada
-        ex.runExperiments("GA", "O2", 10, "");
+        ex.runExperiments("RS", "IV", 10, "");
     }
 
     /**
@@ -81,11 +75,13 @@ public class Executer {
         Operator operator;
 
         switch (operatorType) {
-            case "O2": operator = new InversionOperator();
+            case "IV": operator = new InversionOperator();
             break;
 
-            default: operator = new RoutingOperator();
+            case "RS": operator = new RoutingOperator();
             break;
+
+            default: throw new IllegalArgumentException();
         }
 
         problem.setOperator(operator);
@@ -128,58 +124,6 @@ public class Executer {
         List<ExecutionInformation> executionsInformation = new ArrayList<>();
         ExecutionInformation ei = new ExecutionInformation();
         switch (algorithm) {
-            //Ejecucion de un Escalador de Colinas
-            case "HC": {
-                for (int i = 0; i < executions; i++) {
-                    executeHillClimbing(operator);
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    Strategy.destroyExecute();
-                }
-            }
-            break;
-            //Ejecucion de una Busqueda Tabu
-            case "TS": {
-                for (int i = 0; i < executions; i++) {
-                    executeTabuSearch(operator);
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    Strategy.destroyExecute();
-                }
-            }
-            break;
-            //Ejecucion de un Templado Simulado
-            case "SA": {
-                for (int i = 0; i < executions; i++) {
-                    executeSimulatedAnnealing(operator);
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    Strategy.destroyExecute();
-                }
-            }
-            break;
-            //Ejecucion de una Estrategia Evolutiva
-            case "EE": {
-                for (int i = 0; i < executions; i++) {
-                    executeEvolutionaryStrategy_SteadyStateReplace_TournamentSelection(operator);
-                    ei.bestSolutionFound = Strategy.getStrategy().getBestState();
-                    ei.referenceSolutionByIteration = Strategy.getStrategy().listBest;
-                    ei.candidateSolutionByIteration = Strategy.getStrategy().listStates;
-                    ei.execution = i;
-                    executionsInformation.add(ei);
-                    Strategy.destroyExecute();
-                }
-            }
-            break;
             //Ejecucion de un Algoritmo Genetico
             case "GA": {
                 for (int i = 0; i < executions; i++) {
@@ -222,25 +166,6 @@ public class Executer {
     }
 
     /**
-     * Configuracion para un Escalador de Colinas
-     */
-    public void executeHillClimbing(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        Strategy.getStrategy().setStopexecute(new StopExecute());
-        Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
-        //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem(operator);
-        //Se define el problema de optimizacion a resolver
-        Strategy.getStrategy().setProblem(problem);
-        //Opcion para validar las soluciones
-        Strategy.getStrategy().validate = false;
-        Strategy.getStrategy().saveListBestStates = true;
-        Strategy.getStrategy().saveListStates = true;
-        //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada
-        Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.HillClimbing);
-
-    }
-
-    /**
      * Configuracion para un Escalador de Colinas con reinicio
      */
     public void executeHillClimbingRestart(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
@@ -255,81 +180,9 @@ public class Executer {
         Strategy.getStrategy().saveListBestStates = true;
         Strategy.getStrategy().saveListStates = true;
         //Se configura la metaheuristica para que reinicie la busqueda a las 100 iteraciones
-        HillClimbingRestart.count = 100;
+        HillClimbingRestart.count = 250;
         //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada por GeneratorType
         Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.HillClimbingRestart);
-    }
-
-    /**
-     * Configuracion para una Busqueda Tabu
-     */
-    public void executeTabuSearch(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        Strategy.getStrategy().setStopexecute(new StopExecute());
-        Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
-        //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem(operator);
-        //Se define el problema de optimizacion a resolver
-        Strategy.getStrategy().setProblem(problem);
-        //Opcion para validar las soluciones
-        Strategy.getStrategy().validate = false;
-        Strategy.getStrategy().saveListBestStates = true;
-        Strategy.getStrategy().saveListStates = true;
-        //Se configura la metaheuristica Busqueda Tabu para que la lista de soluciones tenga un tamanno maximo de 100 soluciones
-        TabuSolutions.maxelements = 100;
-        //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada por GeneratorType
-        Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.TabuSearch);
-    }
-
-    /**
-     * Configuracion para un Templado Simulado
-     */
-    public void executeSimulatedAnnealing(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        Strategy.getStrategy().setStopexecute(new StopExecute());
-        Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
-        //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem(operator);
-        //Se define el problema de optimizacion a resolver
-        Strategy.getStrategy().setProblem(problem);
-        //Opcion para validar las soluciones
-        Strategy.getStrategy().validate = false;
-        Strategy.getStrategy().saveListBestStates = true;
-        Strategy.getStrategy().saveListStates = true;
-        SimulatedAnnealing.tfinal = 0d;
-        SimulatedAnnealing.tinitial = 100d;
-        SimulatedAnnealing.alpha = 0.1;
-        SimulatedAnnealing.countIterationsT = 50;
-        //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada por GeneratorType
-        Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.SimulatedAnnealing);
-    }
-
-    /**
-     * Configuracion para una Estrategia Evolutiva
-     */
-    public void executeEvolutionaryStrategy_SteadyStateReplace_TournamentSelection(String operator) throws ClassNotFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        Strategy.getStrategy().setStopexecute(new StopExecute());
-        Strategy.getStrategy().setUpdateparameter(new UpdateParameter());
-        //Se inicializa el problema de optimizacion
-        Problem problem = configureProblem(operator);
-        //Se define el problema de optimizacion a resolver
-        Strategy.getStrategy().setProblem(problem);
-        //Opcion para validar las soluciones
-        Strategy.getStrategy().validate = false;
-        Strategy.getStrategy().saveListBestStates = true;
-        Strategy.getStrategy().saveListStates = true;
-        //Se define el tamanno de la poblacion de soluciones
-        EvolutionStrategies.countRef = 20;
-        //Se especifica a la metaheuristica que utilice la estrategia de mutacion definida en la interfaz Operator
-        EvolutionStrategies.mutationType = MutationType.GenericMutation;
-        //Se define una probabilidad de mutacion de 0.8
-        EvolutionStrategies.PM = 0.8;
-        //Se define como estrategia de reemplazo Estado Estable (va a tomar soluciones de la poblacion de referencia y la nueva generada en cada iteracion)
-        EvolutionStrategies.replaceType = ReplaceType.SteadyStateReplace;
-        //Se define como estrategia de seleccion el Torneo entre individuos de grupos de tamanno T
-        EvolutionStrategies.selectionType = SelectionType.TournamentSelection;
-        //Cantidad de individuos en cada grupo del torneo
-        EvolutionStrategies.truncation = 5;
-        //Se aplica la metaheuristica por el numero de iteraciones especificado, con un tamanno de vecindad y con la metaheuristica especificada por GeneratorType
-        Strategy.getStrategy().executeStrategy(maxIterations, neighbourhoodSize, GeneratorType.EvolutionStrategies);
     }
 
     /**
@@ -352,7 +205,7 @@ public class Executer {
         //Se especifica a la metaheuristica que utilice la estrategia de mutacion definida en la interfaz Operator
         GeneticAlgorithm.mutationType = MutationType.GenericMutation;
         //Se define una probabilidad de mutacion de 0.8
-        GeneticAlgorithm.PM = 0.1;
+        GeneticAlgorithm.PM = 0.25;
         //Se define como estrategia de reemplazo Estado Estable (va a tomar soluciones de la poblacion de referencia y la nueva generada en cada iteracion)
         GeneticAlgorithm.replaceType = ReplaceType.SteadyStateReplace;
         //Se define como estrategia de seleccion Ruleta de probabilidades a partir del fitness de cada individuo
@@ -452,18 +305,6 @@ public class Executer {
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Gets y sets
-     */
-
-    public void setMaxIterations(int maxIterations) {
-        this.maxIterations = maxIterations;
-    }
-
-    public void setNeighbourhoodSize(int neighbourhoodSize) {
-        this.neighbourhoodSize = neighbourhoodSize;
     }
 
     /**
